@@ -5,6 +5,9 @@ The agent never sees raw SQL access — it can only call the curated, governed d
 """
 import asyncio
 import os
+import time
+
+import pandas as pd
 
 import streamlit as st
 from databricks.sdk import WorkspaceClient
@@ -12,6 +15,8 @@ from databricks_langchain import ChatDatabricks, DatabricksMCPServer, Databricks
 from langchain.agents import create_agent
 from langchain.agents.middleware import wrap_model_call
 from langchain_core.messages import AIMessage, HumanMessage, convert_to_messages, convert_to_openai_messages
+
+from eval_suite import EVAL_SET, score
 
 MCP_URL = os.environ["MCP_SERVER_URL"]
 LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "databricks-claude-sonnet-5-5")
@@ -86,6 +91,52 @@ with st.sidebar:
               "Which table tells me why a claim was denied?"]:
         if st.button(q, use_container_width=True):
             st.session_state.setdefault("history", []).append({"role": "user", "content": q})
+
+    st.divider()
+    st.markdown("**🧪 Evaluation (Part 7)**")
+    eval_runs = st.slider("Runs per question", 1, 5, 3)
+    run_eval = st.button(f"Run eval suite ({len(EVAL_SET)} questions)", use_container_width=True)
+
+
+def run_eval_suite(runs: int) -> pd.DataFrame:
+    rows, total = [], len(EVAL_SET) * runs
+    bar = st.progress(0.0, text="Running eval…")
+    for case in EVAL_SET:
+        for r in range(1, runs + 1):
+            t0 = time.time()
+            try:
+                res = asyncio.run(run_agent([{"role": "user", "content": case["question"]}]))
+                answer = extract_text(res["messages"][-1].content)
+                calls = [tc["name"] for m in res["messages"] if isinstance(m, AIMessage) for tc in (m.tool_calls or [])]
+                passed, reason = score(case, answer)
+            except Exception as e:  # a crash is a failed run, not a crashed eval
+                answer, calls, passed, reason = "", [], False, f"error: {type(e).__name__}"
+            rows.append({"case": case["id"], "category": case["category"], "run": r, "passed": passed,
+                         "reason": reason, "tool_calls": len(calls), "tools": " > ".join(calls),
+                         "latency_s": round(time.time() - t0, 1), "answer_preview": answer[:200]})
+            bar.progress(len(rows) / total, text=f"{len(rows)}/{total} runs")
+    bar.empty()
+    return pd.DataFrame(rows)
+
+
+if run_eval:
+    st.subheader("🧪 Eval results")
+    df = run_eval_suite(eval_runs)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Accuracy", f"{df.passed.mean():.0%}", f"{int(df.passed.sum())}/{len(df)} runs")
+    c2.metric("Avg tool calls", f"{df.tool_calls.mean():.1f}", f"max {df.tool_calls.max()}")
+    c3.metric("Avg latency", f"{df.latency_s.mean():.1f}s", f"p95 {df.latency_s.quantile(0.95):.1f}s")
+    c4.metric("Empty/errors", int(df.reason.str.startswith(("empty", "error")).sum()))
+    per_case = (df.groupby(["case", "category"])
+                  .agg(pass_rate=("passed", "mean"), avg_tools=("tool_calls", "mean"),
+                       max_tools=("tool_calls", "max"), avg_latency_s=("latency_s", "mean"))
+                  .reset_index())
+    per_case["pass_rate"] = (per_case.pass_rate * 100).round().astype(int).astype(str) + "%"
+    st.dataframe(per_case.round(1), use_container_width=True)
+    with st.expander("All runs (with failure reasons)"):
+        st.dataframe(df, use_container_width=True)
+    st.download_button("⬇️ Download results CSV", df.to_csv(index=False), "p1_eval_results.csv", "text/csv")
+    st.stop()
 
 st.session_state.setdefault("history", [])
 if prompt := st.chat_input("Ask about the data…"):
