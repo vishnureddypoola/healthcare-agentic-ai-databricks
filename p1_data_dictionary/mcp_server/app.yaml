@@ -1,8 +1,11 @@
-# Databricks App: custom MCP server. Name the app with an "mcp-" prefix (e.g. mcp-hc-dictionary)
-# so AI Playground recognises it. Endpoint after deploy: https://<app-url>/mcp
-command: ["python", "server.py"]
+# Databricks App: Streamlit chat UI for the data dictionary.
+command: ["streamlit", "run", "app.py"]
 env:
-  - name: CATALOG
-    value: "hc_agentic"
-  - name: DATABRICKS_WAREHOUSE_ID
-    valueFrom: sql-warehouse        # add an App resource of type "SQL warehouse" with key "sql-warehouse" (CAN USE)
+  - name: MCP_SERVER_URL
+    value: "https://mcp-hc-dictionary-7405618581936923.3.azure.databricksapps.com/mcp"
+  # Foundation models are served through Unity AI Gateway (no Serving-page endpoint to attach as a resource),
+  # so the model name is set directly. GPT-OSS 120B is used because Claude tool-calling is blocked on this account.
+  - name: LLM_ENDPOINT
+    value: "databricks-gpt-oss-120b"
+  - name: USE_OBO
+    value: "false"                  # "true" = run tools as the signed-in user (needs user authorization scopes on the app)
