@@ -22,7 +22,7 @@ EMBEDDING_ENDPOINT = os.getenv("EMBEDDING_ENDPOINT", "databricks-gte-large-en")
 VS_ENDPOINT = os.getenv("VS_ENDPOINT", "hc-agentic-vs")
 
 # ---- SQL warehouse used by MCP servers and apps -----------------------------
-WAREHOUSE_ID = os.getenv("DATABRICKS_WAREHOUSE_ID", "<your-serverless-warehouse-id>")
+WAREHOUSE_ID = os.getenv("DATABRICKS_WAREHOUSE_ID", "815f20eca2cdb0db")
 
 # ---- MLflow ------------------------------------------------------------------
 EXPERIMENT_ROOT = os.getenv("EXPERIMENT_ROOT", "/Shared/hc-agentic")
