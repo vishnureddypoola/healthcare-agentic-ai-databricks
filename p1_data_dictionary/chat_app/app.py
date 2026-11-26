@@ -105,9 +105,15 @@ if st.session_state.history and st.session_state.history[-1]["role"] == "user":
         else:
             # Reasoning models (e.g. GPT-OSS) can spend the whole budget "thinking" and return no visible text.
             st.warning("The model returned no answer text. Raw output below — try asking again or rephrasing.")
-            with st.expander("Debug: raw final message"):
-                st.code(repr(last.content)[:3000])
-                st.code(repr(getattr(last, "response_metadata", {}))[:1500])
+            with st.expander("Debug: full agent trace"):
+                for i, msg in enumerate(result["messages"]):
+                    usage = (getattr(msg, "usage_metadata", None) or {})
+                    st.code(
+                        f"[{i}] {type(msg).__name__}"
+                        f" | tool_calls={[tc['name'] for tc in (getattr(msg, 'tool_calls', None) or [])]}"
+                        f" | tokens in/out={usage.get('input_tokens')}/{usage.get('output_tokens')}\n"
+                        f"{repr(msg.content)[:600]}"
+                    )
             answer = "_(no answer text returned)_"
         calls = [tc for msg in result["messages"] if isinstance(msg, AIMessage) for tc in (msg.tool_calls or [])]
         if calls:
