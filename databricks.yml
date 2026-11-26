@@ -1,0 +1,78 @@
+# Declarative Automation Bundle (formerly "Databricks Asset Bundles").
+# Deploy:  databricks bundle validate && databricks bundle deploy -t dev
+# Use this AFTER you have run everything manually once — it is your CI/CD + "infra as code" proof point.
+bundle:
+  name: healthcare-agentic-ai
+
+variables:
+  warehouse_id:
+    description: Serverless SQL warehouse id
+  llm_endpoint:
+    default: databricks-claude-sonnet-5-5
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    data_foundation:
+      name: hc-agentic-data-foundation
+      tasks:
+        - task_key: setup
+          notebook_task: { notebook_path: ./common/00_setup_catalog.py }
+        - task_key: synthetic_data
+          depends_on: [{ task_key: setup }]
+          notebook_task: { notebook_path: ./common/01_generate_synthetic_data.py }
+        - task_key: dictionary_extract
+          depends_on: [{ task_key: synthetic_data }]
+          notebook_task: { notebook_path: ./p1_data_dictionary/01_extract_uc_metadata.py }
+        - task_key: dictionary_generate
+          depends_on: [{ task_key: dictionary_extract }]
+          notebook_task: { notebook_path: ./p1_data_dictionary/02_generate_column_docs.py }
+
+    triage_release:
+      name: hc-agentic-triage-release
+      tasks:
+        - task_key: evaluate
+          notebook_task:
+            notebook_path: ./p4_claims_triage/02_evaluate.py
+            base_parameters: { warehouse_id: "${var.warehouse_id}" }
+        - task_key: gate
+          depends_on: [{ task_key: evaluate }]
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.evaluate.values.eval_passed}}"
+            right: "true"
+        - task_key: deploy
+          depends_on: [{ task_key: gate, outcome: "true" }]
+          notebook_task:
+            notebook_path: ./p4_claims_triage/03_log_register_deploy.py
+            base_parameters: { warehouse_id: "${var.warehouse_id}" }
+
+  apps:
+    mcp_hc_dictionary:
+      name: mcp-hc-dictionary
+      source_code_path: ./p1_data_dictionary/mcp_server
+      resources:
+        - name: sql-warehouse
+          sql_warehouse: { id: "${var.warehouse_id}", permission: CAN_USE }
+    hc_dictionary_chat:
+      name: hc-dictionary-chat
+      source_code_path: ./p1_data_dictionary/chat_app
+      resources:
+        - name: serving-endpoint
+          serving_endpoint: { name: "${var.llm_endpoint}", permission: CAN_QUERY }
+    mcp_hc_prior_auth:
+      name: mcp-hc-prior-auth
+      source_code_path: ./p3_prior_auth/mcp_server
+      resources:
+        - name: sql-warehouse
+          sql_warehouse: { id: "${var.warehouse_id}", permission: CAN_USE }
+    hc_prior_auth_agent:
+      name: hc-prior-auth-agent
+      source_code_path: ./p3_prior_auth/app
+      resources:
+        - name: serving-endpoint
+          serving_endpoint: { name: "${var.llm_endpoint}", permission: CAN_QUERY }
