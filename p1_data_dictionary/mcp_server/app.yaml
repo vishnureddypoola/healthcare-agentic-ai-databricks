@@ -1,0 +1,8 @@
+# Databricks App: custom MCP server. Name the app with an "mcp-" prefix (e.g. mcp-hc-dictionary)
+# so AI Playground recognises it. Endpoint after deploy: https://<app-url>/mcp
+command: ["python", "server.py"]
+env:
+  - name: CATALOG
+    value: "hc_agentic"
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse        # add an App resource of type "SQL warehouse" with key "sql-warehouse" (CAN USE)

@@ -1,0 +1,7 @@
+streamlit>=1.40
+databricks-sdk>=0.60
+databricks-langchain>=0.8
+databricks-mcp
+langchain>=1.0
+langgraph>=1.0
+mcp>=1.24,<2
