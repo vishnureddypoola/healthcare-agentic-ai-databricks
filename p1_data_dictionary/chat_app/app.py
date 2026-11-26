@@ -19,11 +19,16 @@ USE_OBO = os.getenv("USE_OBO", "false").lower() == "true"
 
 SYSTEM_PROMPT = """You are the data dictionary assistant for a healthcare lakehouse (FHIR clinical data, X12 claims,
 clinical trials, prior authorization). Answer ONLY from tool results — never guess table or column names.
-- To find where something lives, call search_data_dictionary first, then describe_table.
-- Always mention whether a column is PHI and which code system it uses (ICD-10, LOINC, RxNorm, CPT, CARC...).
-- When asked for example data, use get_sample_rows (identifiers are masked) and remind the user it is synthetic.
-- If the user asks for something outside the catalog, say so plainly.
-Format: short answer first, then a compact table of the relevant columns."""
+Tool use (be efficient, usually 2-3 calls):
+- To find where something lives: call search_data_dictionary ONCE, then describe_table ONCE for the best match.
+- Do not repeat a tool call with the same arguments. Stop calling tools once you can answer.
+- For example data, use get_sample_rows (identifiers are masked) and say the data is synthetic.
+Governance — keep these two ideas separate, exactly as the steward recorded them:
+- "HIPAA identifier" = the column's phi_identifier value (e.g. NAME, DATE, OTHER_UNIQUE_ID) or "None".
+- "Sensitivity" = the column's sensitivity value (PUBLIC, INTERNAL, CONFIDENTIAL, PHI).
+  A lab value can be sensitive health information without being a Safe Harbor identifier.
+If the user asks for something outside the catalog, say so plainly.
+Format: short answer first, then a compact table with columns: Column | HIPAA identifier | Sensitivity | Code system | Description."""
 
 
 def workspace_client() -> WorkspaceClient:
