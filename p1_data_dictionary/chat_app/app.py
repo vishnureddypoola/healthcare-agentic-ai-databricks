@@ -31,6 +31,19 @@ If the user asks for something outside the catalog, say so plainly.
 Format: short answer first, then a compact table with columns: Column | HIPAA identifier | Sensitivity | Code system | Description."""
 
 
+def extract_text(content) -> str:
+    """Return only the user-visible text from a chat message (skips reasoning blocks)."""
+    if isinstance(content, str):
+        return content
+    parts = []
+    for b in content or []:
+        if isinstance(b, str):
+            parts.append(b)
+        elif isinstance(b, dict) and b.get("type") in ("text", "output_text"):
+            parts.append(b.get("text", ""))
+    return "".join(parts)
+
+
 def workspace_client() -> WorkspaceClient:
     if USE_OBO:
         token = st.context.headers.get("x-forwarded-access-token")
@@ -52,7 +65,7 @@ async def run_agent(history: list[dict]):
     ])
     tools = await client.get_tools()
     agent = create_agent(
-        model=ChatDatabricks(endpoint=LLM_ENDPOINT, temperature=0),
+        model=ChatDatabricks(endpoint=LLM_ENDPOINT, temperature=0, max_tokens=4096),
         tools=tools,
         system_prompt=SYSTEM_PROMPT,
         middleware=[convert_mcp_content],
@@ -85,10 +98,17 @@ if st.session_state.history and st.session_state.history[-1]["role"] == "user":
     with st.chat_message("assistant"):
         with st.spinner("Looking it up in Unity Catalog…"):
             result = asyncio.run(run_agent(st.session_state.history))
-        answer = result["messages"][-1].content
-        if isinstance(answer, list):  # some models return content blocks
-            answer = "".join(b.get("text", "") for b in answer if isinstance(b, dict))
-        st.markdown(answer)
+        last = result["messages"][-1]
+        answer = extract_text(last.content)
+        if answer.strip():
+            st.markdown(answer)
+        else:
+            # Reasoning models (e.g. GPT-OSS) can spend the whole budget "thinking" and return no visible text.
+            st.warning("The model returned no answer text. Raw output below — try asking again or rephrasing.")
+            with st.expander("Debug: raw final message"):
+                st.code(repr(last.content)[:3000])
+                st.code(repr(getattr(last, "response_metadata", {}))[:1500])
+            answer = "_(no answer text returned)_"
         calls = [tc for msg in result["messages"] if isinstance(msg, AIMessage) for tc in (msg.tool_calls or [])]
         if calls:
             with st.expander(f"🔧 {len(calls)} tool call(s)"):
