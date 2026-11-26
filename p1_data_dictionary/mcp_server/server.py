@@ -88,7 +88,7 @@ def describe_table(table: str) -> list[dict]:
 def search_data_dictionary(keyword: str, limit: int = 20) -> list[dict]:
     """Find columns whose name, description, business definition or code system mention a keyword
     (e.g. 'HbA1c', 'denial', 'LOINC', 'birth'). Use this when the user does not know which table holds something."""
-    return run_sql(
+    rows = run_sql(
         f"""SELECT table_schema, table_name, column_name, description, code_system, sensitivity
             FROM {DOCS}
             WHERE lower(concat_ws(' ', column_name, description, business_definition, code_system, example_question))
@@ -96,6 +96,13 @@ def search_data_dictionary(keyword: str, limit: int = 20) -> list[dict]:
             LIMIT {max(1, min(int(limit), 50))}""",
         {"kw": keyword},
     )
+    if not rows:
+        # Eval finding (P1 Part 7): agents read an empty keyword result as "the data does not exist".
+        # Keyword search misses synonyms/abbreviations, so say so explicitly instead of returning [].
+        return [{"note": f"No keyword match for '{keyword}'. This does NOT mean the data is absent: the docs may use "
+                         "a synonym, full name or code (e.g. 'HbA1c' vs 'hemoglobin A1c' vs a LOINC code). Try another "
+                         "term, or call list_tables / describe_table before concluding."}]
+    return rows
 
 
 @mcp.tool()
