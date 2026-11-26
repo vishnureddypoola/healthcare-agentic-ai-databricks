@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # P1 · Step 3 — Human review, then publish to Unity Catalog (comments + tags)
 # MAGIC Pattern: **LLM drafts → steward approves → system of record updated.** The LLM never writes to UC directly.
@@ -9,16 +13,18 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Auto-approve high-confidence docs
 import sys, os
 sys.path.append(os.path.abspath(".."))
 from common.config import *
 DOCS = fq(SCHEMA_AI, "column_docs")
 ME = spark.sql("SELECT current_user()").first()[0]
+PARSE_OK_FILTER = " AND parse_ok" if "parse_ok" in spark.table(DOCS).columns else ""
 
 spark.sql(f"""
 UPDATE {DOCS}
 SET review_status = 'APPROVED', reviewer = 'auto:confidence>=0.85'
-WHERE review_status = 'PENDING_REVIEW' AND confidence >= 0.85 AND NOT phi_disagreement AND parse_ok
+WHERE review_status = 'PENDING_REVIEW' AND confidence >= 0.85 AND NOT phi_disagreement{PARSE_OK_FILTER}
 """)
 display(spark.sql(f"SELECT review_status, count(*) n FROM {DOCS} GROUP BY 1"))
 
