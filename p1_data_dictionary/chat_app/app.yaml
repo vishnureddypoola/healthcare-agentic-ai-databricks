@@ -2,8 +2,8 @@
 command: ["streamlit", "run", "app.py"]
 env:
   - name: MCP_SERVER_URL
-    value: "https://<your-mcp-hc-dictionary-app-url>/mcp"   # copy from the MCP app's Overview page + /mcp
+    value: "https://mcp-hc-dictionary-7405618581936923.3.azure.databricksapps.com/mcp"
   - name: LLM_ENDPOINT
-    valueFrom: serving-endpoint     # App resource: Serving endpoint (CAN QUERY) -> your chat model
+    value: "databricks-gpt-oss-120b"
   - name: USE_OBO
-    value: "false"                  # "true" = run tools as the signed-in user (needs user authorization scopes on the app)
+    value: "false"
