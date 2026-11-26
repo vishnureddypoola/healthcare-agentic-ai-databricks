@@ -108,7 +108,7 @@ def run_eval_suite(runs: int) -> pd.DataFrame:
                 res = asyncio.run(run_agent([{"role": "user", "content": case["question"]}]))
                 answer = extract_text(res["messages"][-1].content)
                 calls = [tc["name"] for m in res["messages"] if isinstance(m, AIMessage) for tc in (m.tool_calls or [])]
-                passed, reason = score(case, answer)
+                passed, reason = score(case, answer, calls)
             except Exception as e:  # a crash is a failed run, not a crashed eval
                 answer, calls, passed, reason = "", [], False, f"error: {type(e).__name__}"
             rows.append({"case": case["id"], "category": case["category"], "run": r, "passed": passed,
