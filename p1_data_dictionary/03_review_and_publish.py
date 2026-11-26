@@ -18,7 +18,7 @@ ME = spark.sql("SELECT current_user()").first()[0]
 spark.sql(f"""
 UPDATE {DOCS}
 SET review_status = 'APPROVED', reviewer = 'auto:confidence>=0.85'
-WHERE review_status = 'PENDING_REVIEW' AND confidence >= 0.85 AND NOT phi_disagreement
+WHERE review_status = 'PENDING_REVIEW' AND confidence >= 0.85 AND NOT phi_disagreement AND parse_ok
 """)
 display(spark.sql(f"SELECT review_status, count(*) n FROM {DOCS} GROUP BY 1"))
 
