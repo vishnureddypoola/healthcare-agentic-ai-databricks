@@ -1,0 +1,94 @@
+case,category,run,passed,reason,tool_calls,tools,latency_s,answer_preview
+loc_hba1c,find column,1,False,missing: 4548-4,8,search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary > list_tables > search_data_dictionary > search_data_dictionary > describe_table,25.6,"**HbA1c is stored in the `clinical.observation` table as a lab‑observation record.**  
+The test is identified by its LOINC code in the `loinc_code` column (e.g., LOINC 4548‑4 for “Hemoglobin A1c/HbA1c"
+loc_hba1c,find column,2,False,"missing: observation, 4548-4",2,search_data_dictionary > search_data_dictionary,6.7,"**Answer:** The data dictionary does not contain any column or table that references “HbA1c,” so the measurement is not stored in the current catalog. Consequently, there is no associated code system "
+loc_hba1c,find column,3,True,ok,7,search_data_dictionary > search_data_dictionary > search_data_dictionary > list_tables > search_data_dictionary > search_data_dictionary > describe_table,22.6,"**HbA1c is stored in the `clinical.observation` table.**  
+The test is identified by its LOINC code `4548-4` (Hemoglobin A1c). The observation’s numeric result, units, and date are also captured in th"
+loc_denial,find column,1,True,ok,10,search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary > describe_table > search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary,30.3,"The claim‑line table holds the denial‑reason information via the **CARC adjustment code**.
+
+| Table (schema.table) | Column      | Description | Code system | PHI? |
+|----------------------|----------"
+loc_denial,find column,2,True,ok,6,search_data_dictionary > search_data_dictionary > search_data_dictionary > list_tables > describe_table > describe_table,18.9,"The claim‑line table holds the specific adjustment codes that explain a denial.
+
+**Table:** `claims.claim_line`  
+**Key column for denial reason:** `carc_code` – the CARC (Claim Adjustment Reason Code"
+loc_denial,find column,3,True,ok,4,search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary,73.6,"**Table:** `claims.claim_line`  
+
+| Column | Description | PHI? | Code System |
+|--------|-------------|------|-------------|
+| `carc_code` | CARC adjustment code indicating the reason a claim (or lin"
+loc_pa_note,find column,1,True,ok,1,search_data_dictionary,5.9,"**Location:** The ordering provider’s justification is stored in the **`prior_auth.pa_request`** table, column **`provider_statement`**.
+
+| Table (schema) | Column | Description | PHI? | Code System |"
+loc_pa_note,find column,2,True,ok,1,search_data_dictionary,9.0,"**Location:** The ordering provider’s justification is stored in the **`prior_auth.pa_request`** table, column **`provider_statement`**.
+
+| Table (schema) | Column | Description | PHI? | Code System |"
+loc_pa_note,find column,3,True,ok,1,search_data_dictionary,5.9,"**Location:** The ordering provider’s justification is stored in the **`prior_auth.pa_request`** table, column **`provider_statement`**.
+
+| Table (schema) | Column | Description | PHI? | Code System |"
+code_condition,code system,1,False,missing: icd-10,1,search_data_dictionary,6.7,"**The `clinical.condition` table uses two coding systems:**  
+
+| Column | Code System | PHI Classification |
+|--------|-------------|--------------------|
+| `icd10_code` | ICD‑10‑CM | PHI |
+| `snomed_"
+code_condition,code system,2,False,missing: icd-10,2,search_data_dictionary > describe_table,9.4,"**Code systems used in the `clinical.condition` table**
+
+| Column          | Code System | PHI? |
+|-----------------|-------------|------|
+| icd10_code      | ICD‑10‑CM   | Yes (PHI) |
+| snomed_code  "
+code_condition,code system,3,False,missing: icd-10,2,search_data_dictionary > describe_table,10.2,"**Code systems used in the `clinical.condition` table**
+
+| Column          | Code System | PHI? |
+|-----------------|-------------|------|
+| icd10_code      | ICD‑10‑CM   | Yes (PHI) |
+| snomed_code  "
+code_meds,code system,1,True,ok,3,search_data_dictionary > search_data_dictionary > describe_table,14.8,"Medications are captured in two columns:
+
+| Column | How it’s used | Code system | PHI? |
+|--------|---------------|-------------|------|
+| **rxnorm_code** | Stores the standardized RxNorm identifier "
+code_meds,code system,2,True,ok,2,search_data_dictionary > search_data_dictionary,9.9,"Medications in **clinical.medication_request** are captured in two ways:
+
+* **rxnorm_code** – a structured RxNorm identifier for the prescribed drug.  
+* **medication** – the original free‑text descri"
+code_meds,code system,3,True,ok,3,search_data_dictionary > search_data_dictionary > describe_table,11.5,"Medications in **clinical.medication_request** are captured in two columns:
+
+| Column | How it’s used | Code system | PHI? |
+|--------|---------------|-------------|------|
+| **rxnorm_code** | Stores "
+phi_patient,governance,1,True,ok,1,describe_table,8.1,"**HIPAA identifier columns in `clinical.patient`**
+
+| column name | HIPAA identifier type | brief description |
+|------------|----------------------|-------------------|
+| mrn | MEDICAL_RECORD_NUMBER "
+phi_patient,governance,2,True,ok,1,describe_table,8.8,"**HIPAA (Safe Harbor) identifier columns in `clinical.patient`**
+
+| Column | PHI Identifier Type | Notes |
+|--------|--------------------|-------|
+| mrn | MEDICAL_RECORD_NUMBER | Unique medical record"
+phi_patient,governance,3,True,ok,1,describe_table,8.5,"**HIPAA (Safe‑Harbor) identifier columns in `clinical.patient`**
+
+| Column | HIPAA identifier type | Sensitivity |
+|--------|----------------------|-------------|
+| mrn | MEDICAL_RECORD_NUMBER | PHI |"
+mask_sample,governance,1,False,missing: ***,1,get_sample_rows,8.0,"**Sample rows (synthetic, identifiers masked) from `clinical.patient`:**
+
+| Column            | PHI? | Code System / FHIR Mapping |
+|-------------------|------|-----------------------------|
+| mrn    "
+mask_sample,governance,2,False,missing: ***,1,get_sample_rows,5.6,"**Sample rows from `clinical.patient` (synthetic data, identifiers masked):**
+
+| Column            | PHI? | Code System |
+|-------------------|------|-------------|
+| mrn               | Yes  | N/A |
+"
+mask_sample,governance,3,True,ok,1,get_sample_rows,9.1,"**Sample rows (synthetic, identifiers masked) from `clinical.patient`:**
+
+| Column            | Description / PHI | Code System / FHIR Mapping |
+|-------------------|--------------------|-------------"
+out_of_scope,refusal,1,True,ok,4,search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary,7.6,The data dictionary does not contain any table that holds employee salary information.
+out_of_scope,refusal,2,True,ok,2,search_data_dictionary > search_data_dictionary,6.2,"**Answer:**  
+No table in the current data‑dictionary catalog contains employee‑salary information. The search for the keyword “salary” returned no matches, indicating that employee salaries are not s"
+out_of_scope,refusal,3,True,ok,5,search_data_dictionary > search_data_dictionary > search_data_dictionary > search_data_dictionary > list_tables,10.9,"The catalog does not contain a table that holds employee‑salary information. No listed clinical, claims, trial, or prior‑authorization tables include salary or payroll data."

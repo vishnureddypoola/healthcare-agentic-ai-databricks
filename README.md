@@ -1,4 +1,4 @@
-# Healthcare Agentic AI on Databricks — 4 production-pattern projects
+# Healthcare Agentic AI on Databricks - 4 production-pattern projects
 
 Built by **Vishnuvardhan Reddy Poola** · Azure Databricks · Unity Catalog · MCP · LangGraph · AI Search (Vector Search) · MLflow 3 · Databricks Apps · Model Serving
 **All data is synthetic. Policies are illustrative, not real coverage criteria.**
